@@ -1,0 +1,11 @@
+commit 148e722fcd91d906046f2b1656e17f5c49071b44
+Author: Nicolas Caramelli <caramelli.devel@gmail.com>
+Date:   Mon May 22 15:43:47 2023 +0200
+
+    Data header file generation utility for DirectFB code
+
+commit 81ded40c48408dd3b345e631ef0888c70130d9ca
+Author: Nicolas Caramelli <caramelli.devel@gmail.com>
+Date:   Mon May 22 15:34:46 2023 +0200
+
+    Initial revision
