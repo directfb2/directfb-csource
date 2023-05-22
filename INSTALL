@@ -1,0 +1,13 @@
+directfb-csource is built using Meson.
+
+First, configure the build:
+
+  $ meson setup build/
+
+Start the build with:
+
+  $ meson compile -C build/
+
+And install directfb-csource using:
+
+  $ meson install -C build/
