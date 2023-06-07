@@ -1,3 +1,24 @@
+commit 21db181f8eb8d1a4a8f8d39363b0f67f4528849b
+Author: Nicolas Caramelli <caramelli.devel@gmail.com>
+Date:   Wed Jun 7 22:04:41 2023 +0200
+
+    Add --premultiply option
+
+commit c8ae6ca34dd3f75cb20d90815626e0b38182d48a
+Merge: 81ded40 b121086
+Author: DirectFB2 <80045286+directfb2@users.noreply.github.com>
+Date:   Mon May 22 15:53:06 2023 +0200
+
+    Merge pull request #1 from caramelli/master
+    
+    Data header file generation utility for DirectFB code
+
+commit b121086bc3965588c0b3af3ccd6f70ef5f3fbd9b
+Author: Nicolas Caramelli <caramelli.devel@gmail.com>
+Date:   Mon May 22 15:44:11 2023 +0200
+
+    Add ChangeLog
+
 commit 148e722fcd91d906046f2b1656e17f5c49071b44
 Author: Nicolas Caramelli <caramelli.devel@gmail.com>
 Date:   Mon May 22 15:43:47 2023 +0200
