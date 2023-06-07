@@ -35,8 +35,9 @@
 #ifdef HAVE_DIRECTFB
 static const DirectFBPixelFormatNames(format_names);
 
-static DFBSurfacePixelFormat  format      = DSPF_UNKNOWN;
-static DFBColor               transparent = { .a = 0 };
+static DFBSurfacePixelFormat  format        = DSPF_UNKNOWN;
+static bool                   premultiplied = false;
+static DFBColor               transparent   = { .a = 0 };
 #endif
 static const char            *filename    = NULL;
 static bool                   rawdata     = false;
@@ -52,9 +53,14 @@ static void print_usage()
 
      fprintf( stderr, "Data Header File Generation Utility for DirectFB Code\n\n" );
      fprintf( stderr, "Usage: directfb-csource [options] <filename>\n\n" );
+#ifdef HAVE_DIRECTFB
      fprintf( stderr, "  --format=<pixelformat>    Choose the pixel format.\n" );
-     fprintf( stderr, "  --raw                     Dump file directly to header\n" );
+#endif
+     fprintf( stderr, "  --raw                     Dump file directly to header.\n" );
+#ifdef HAVE_DIRECTFB
+     fprintf( stderr, "  --premultiply             Generate premultiplied pixels (default false).\n" );
      fprintf( stderr, "  --transparent=<AARRGGBB>  Set completely transparent pixels to this color value.\n" );
+#endif
      fprintf( stderr, "  --name=<identifer>        Specifies the identifier name for the generated variables.\n" );
      fprintf( stderr, "  --help                    Show this help message.\n\n");
 #ifdef HAVE_DIRECTFB
@@ -115,20 +121,6 @@ static bool parse_transparent( const char *arg )
 
      return true;
 }
-#else
-static bool parse_format( const char *arg )
-{
-     fprintf( stderr, "--format option only available when building with DirectFB support!\n" );
-
-     return false;
-}
-
-static bool parse_transparent( const char *arg )
-{
-     fprintf( stderr, "--transparent option only available when building with DirectFB support!\n" );
-
-     return false;
-}
 #endif
 
 static bool parse_command_line( int argc, char *argv[] )
@@ -144,15 +136,23 @@ static bool parse_command_line( int argc, char *argv[] )
                     return false;
                }
 
+#ifdef HAVE_DIRECTFB
                if (strncmp( arg, "format=", 7 ) == 0) {
                     if (!parse_format( arg + 7 ))
                          return false;
 
                     continue;
                }
+#endif
 
                if (strcmp( arg, "raw" ) == 0) {
                     rawdata = true;
+                    continue;
+               }
+
+#ifdef HAVE_DIRECTFB
+               if (strcmp( arg, "premultiply" ) == 0) {
+                    premultiplied = true;
                     continue;
                }
 
@@ -162,6 +162,7 @@ static bool parse_command_line( int argc, char *argv[] )
 
                     continue;
                }
+#endif
 
                if (strncmp( arg, "name=", 5 ) == 0 && !name) {
                     name = arg + 5;
@@ -267,6 +268,11 @@ static bool load_image( DFBSurfaceDescription *desc )
                goto out;
           }
 
+          if (premultiplied) {
+               fprintf( stderr, "Generate premultiplied pixels is not supported for DFIFF input image!\n" );
+               goto out;
+          }
+
           if (transparent.a) {
                fprintf( stderr, "Set completely transparent pixels is not supported for DFIFF input image!\n" );
                goto out;
@@ -292,7 +298,7 @@ static bool load_image( DFBSurfaceDescription *desc )
 #ifdef HAVE_PNG
      else if (!png_sig_cmp( (unsigned char*) signature, 0, 8 )) {
           DFBSurfacePixelFormat src_format;
-          int                   bpp, type, y;
+          int                   bpp, type, x, y;
 
           png_ptr = png_create_read_struct( PNG_LIBPNG_VER_STRING, NULL, NULL, NULL );
           if (!png_ptr) {
@@ -434,6 +440,21 @@ static bool load_image( DFBSurfaceDescription *desc )
                     row_ptrs[y] = data + y * pitch;
 
                png_read_image( png_ptr, row_ptrs );
+          }
+
+          if (premultiplied) {
+               for (y = 0; y < height; y++) {
+                    u32 *p = (u32*) (data + y * pitch);
+
+                    for (x = 0; x < width; x++) {
+                         u32 s = p[x];
+                         u32 a = (s >> 24) + 1;
+
+                         p[x] = ((((s & 0x00FF00FF) * a) >> 8) & 0x00FF00FF) |
+                                ((((s & 0x0000FF00) * a) >> 8) & 0x0000FF00) |
+                                (   s & 0xFF000000                         );
+                    }
+               }
           }
 
           /* replace color in completely transparent pixels */
@@ -731,6 +752,10 @@ static void dump_dsdesc( DFBSurfaceDescription *desc )
                       "                            DSDESC_PREALLOCATED" );
      if (desc->palette.size > 0)
           fprintf( stdout, " | DSDESC_PALETTE" );
+     if (premultiplied) {
+          fprintf( stdout, " | DSDESC_CAPS,\n" );
+          fprintf( stdout, "  caps                    : DSCAPS_PREMULTIPLIED" );
+     }
      fprintf( stdout, ",\n" );
      fprintf( stdout, "  width                   : %d,\n", desc->width );
      fprintf( stdout, "  height                  : %d,\n", desc->height );
